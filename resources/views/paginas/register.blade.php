@@ -39,7 +39,7 @@
               <label class="campo">
                 <span class="etiqueta">Correo</span>
                 {{-- name="email", value="{{ old('email') }}" --}}
-                <input class="entrada" type="email" name="email" placeholder="tucorreo@ejemplo.com" value="{{ old('email') }}" required>
+                <input class="entrada" type="email" name="email" placeholder="Ingrese su correo a qui @gmail.com" value="{{ old('email') }}" required>
                 @error('email')
                   <span class="error-laravel">{{ $message }}</span>
                 @enderror

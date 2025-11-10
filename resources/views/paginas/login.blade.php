@@ -19,7 +19,7 @@
 
               <label class="campo">
                 <span class="etiqueta">Correo</span>
-                <input class="entrada" type="email" name="email" placeholder="tucorreo@ejemplo.com" value="{{ old('email') }}" required autofocus>
+                <input class="entrada" type="email" name="email" placeholder="Ingrese su correo a qui @gmail.com" value="{{ old('email') }}" required autofocus>
                 @error('email')
                   <span class="error-laravel">{{ $message }}</span>
                 @enderror

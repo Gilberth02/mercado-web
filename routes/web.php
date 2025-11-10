@@ -37,17 +37,17 @@ Route::get('/', function () {
  //   return view('paginas.registro');
 //});
 
-// Panel cliente (cuando tengas la vista)
+// Panel cliente 
 Route::get('/cliente', function () {
     return view('paginas.cliente'); // crea recursos/views/paginas/cliente.blade.php
 });
 
-// Panel vendedor (cuando tengas la vista)
+// Panel vendedor 
 Route::get('/vendedor', function () {
     return view('paginas.vendedor'); // crea recursos/views/paginas/vendedor.blade.php
 });
 
-// Panel delivery (cuando tengas la vista)
+// Panel delivery 
 Route::get('/delivery', function () {
     return view('paginas.delivery'); // crea recursos/views/paginas/delivery.blade.php
 });
