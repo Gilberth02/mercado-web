@@ -15,7 +15,7 @@
             <h1 class="titu">Iniciar sesión</h1>
 
             <form class="formulario" action="{{ route('login') }}" method="POST">
-              @csrf
+              @csrf <!-- enceipta los datos importantes-->
 
               <label class="campo">
                 <span class="etiqueta">Correo</span>

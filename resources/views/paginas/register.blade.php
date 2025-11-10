@@ -23,14 +23,14 @@
             <form class="formulario" action="{{ route('register') }}" method="POST">
               
               {{-- CAMBIO 2: ¡Muy importante! Token de seguridad de Laravel --}}
-              @csrf
+              @csrf <!-- se encarga de encriptar los datos importantes -->
 
               {{-- CAMBIO 3: Añadir 'name' a todos los inputs --}}
               <label class="campo">
                 <span class="etiqueta">Nombre completo</span>
-                {{-- name="name", value="{{ old('name') }}" para guardar el valor si hay un error --}}
+                
                 <input class="entrada" type="text" name="name" placeholder="tu nombre" value="{{ old('name') }}" required autofocus>
-                {{-- CAMBIO 4: Mostrar errores de validación --}}
+                {{--  Mostrar errores de validación --}}
                 @error('name')
                   <span class="error-laravel">{{ $message }}</span>
                 @enderror
@@ -60,10 +60,7 @@
                 <input class="entrada" type="password" name="password_confirmation" placeholder="repite la contraseña" required>
               </label>
 
-              {{-- 
-                CAMBIO 5: Se eliminó el <select> "Tipo de usuario".
-                Nuestra lógica es que todos se registran como 'cliente' primero.
-              --}}
+            
 
               <label class="acepta">
                 {{-- name="terms" (Breeze puede validar esto) --}}
@@ -74,12 +71,12 @@
                 @enderror
               </label>
 
-              {{-- CAMBIO 6: type="submit" para enviar el formulario y quitar 'disabled' --}}
+              
               <button type="submit" class="boton">Registrarme</button>
 
               <hr> {{-- Separador visual --}}
 
-              {{-- CAMBIO 7: Botón de Google --}}
+              {{-- Botón de Google --}}
               <div class="campo-social">
                 <a href="{{ route('google.redirect') }}" class="boton boton-google">
                   <img src="https://rotulosmatesanz.com/wp-content/uploads/2017/09/2000px-Google_G_Logo.svg_.png" alt="Google">
@@ -88,7 +85,7 @@
               </div>
 
 
-              {{-- CAMBIO 8: Usar route('login') es más robusto que url('/login') --}}
+              {{--  Usar route('login') es más robusto que url('/login') --}}
               <p class="nota">¿Ya tienes cuenta? <a href="{{ route('login') }}" class="enlace">Inicia sesión</a></p>
             </form>
           </div>

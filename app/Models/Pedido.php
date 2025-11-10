@@ -8,10 +8,9 @@ class Pedido extends Model
 {
     // app/Models/Pedido.php
 
-// ... (dentro de la clase Pedido)
 
 /**
- * El cliente (usuario) que hizo el pedido.
+ * El cliente que hizo el pedido.
  */
 public function cliente()
 {

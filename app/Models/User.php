@@ -47,19 +47,18 @@ class User extends Authenticatable
     }
     // app/Models/User.php
 
-// ... (dentro de la clase User)
 
 /**
  * Los roles que tiene el usuario.
  */
 public function roles()
 {
-    // Un Usuario pertenece a muchos Roles (tabla pivote 'usuario_roles')
+    // Un Usuario pertenece a muchos Roles (tabla pivote)
     return $this->belongsToMany(Rol::class, 'usuario_roles');
 }
 
 /**
- * El perfil de vendedor (si lo tiene).
+ * El perfil de vendedor
  */
 public function vendedor()
 {
@@ -68,7 +67,7 @@ public function vendedor()
 }
 
 /**
- * El perfil de repartidor (si lo tiene).
+ * El perfil de repartidor
  */
 public function repartidor()
 {
@@ -77,7 +76,7 @@ public function repartidor()
 }
 
 /**
- * Los pedidos que ha hecho como cliente.
+ * Los pedidos que ha hecho como cliente
  */
 public function pedidos()
 {
