@@ -24,7 +24,14 @@
         <hr class="linea_centro">
         <h1 class="titulo">COMERCIO JUSTO</h1>
 
-        <a href="#roles" class="boton">Comprar ahora</a>
+        @guest
+          <a href="{{ route('login') }}" class="boton">Comprar ahora</a>
+        @else
+          <form method="POST" action="{{ route('logout') }}" style="display:inline">
+            @csrf
+            <button type="submit" class="boton">Cerrar sesión</button>
+          </form>
+        @endguest
       </div>
     </div>
   </section>
@@ -40,7 +47,14 @@
           <div class="info">
             <h3>Cliente</h3>
             <p>Explora productos y realiza tus compras en línea.</p>
-            <a href="{{ url('/login') }}" class="boton_borde">Ingresar</a>
+            @guest
+              <a href="{{ route('login') }}" class="boton_borde">Ingresar</a>
+            @else
+              <form method="POST" action="{{ route('logout') }}" style="display:inline">
+                @csrf
+                <button type="submit" class="boton_borde">Cerrar sesión</button>
+              </form>
+            @endguest
           </div>
         </div>
 
@@ -51,7 +65,14 @@
           <div class="info">
             <h3>Vendedor</h3>
             <p>Publica productos y gestiona tus ventas.</p>
-            <a href="{{ url('/login') }}" class="boton_borde">Ingresar</a>
+            @guest
+              <a href="{{ route('login') }}" class="boton_borde">Ingresar</a>
+            @else
+              <form method="POST" action="{{ route('logout') }}" style="display:inline">
+                @csrf
+                <button type="submit" class="boton_borde">Cerrar sesión</button>
+              </form>
+            @endguest
           </div>
         </div>
 
@@ -62,7 +83,14 @@
           <div class="info">
             <h3>Delivery</h3>
             <p>Accede a pedidos y realiza entregas.</p>
-            <a href="{{ url('/login') }}" class="boton_borde">Ingresar</a>
+            @guest
+              <a href="{{ route('login') }}" class="boton_borde">Ingresar</a>
+            @else
+              <form method="POST" action="{{ route('logout') }}" style="display:inline">
+                @csrf
+                <button type="submit" class="boton_borde">Cerrar sesión</button>
+              </form>
+            @endguest
           </div>
         </div>
       </div>

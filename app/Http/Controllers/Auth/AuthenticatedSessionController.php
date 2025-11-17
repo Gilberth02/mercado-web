@@ -29,7 +29,9 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Redirigir al HOME configurado (página de cliente) en lugar del dashboard
+        // Usamos la constante HOME definida en AppServiceProvider
+        return redirect()->intended(\App\Providers\AppServiceProvider::HOME);
     }
 
     /**

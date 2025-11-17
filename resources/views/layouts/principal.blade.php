@@ -34,7 +34,14 @@
           🛒<span class="bola">0</span>
         </a>
 
-        <a href="{{ url('/login') }}" class="boton_login">Login</a>
+        @guest
+          <a href="{{ route('login') }}" class="boton_login">Login</a>
+        @else
+          <form method="POST" action="{{ route('logout') }}" style="display:inline">
+            @csrf
+            <button type="submit" class="boton_login">Cerrar sesión</button>
+          </form>
+        @endguest
       </nav>
     </div>
   </header>

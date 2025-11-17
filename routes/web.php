@@ -4,6 +4,9 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Auth\SocialiteController;
+use App\Http\Controllers\VendedorController;
+use App\Http\Controllers\RepartidorController;
+use App\Http\Controllers\ProductoController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -43,12 +46,41 @@ Route::get('/cliente', function () {
 })->middleware('auth'); //autentificacion para personas autorizadas
 
 // Panel vendedor 
-Route::get('/vendedor', function () {
-    return view('paginas.vendedor'); // crea recursos/views/paginas/vendedor.blade.php
+Route::get('/vendedor', [ProductoController::class, 'create'])
+     ->middleware(['auth', 'role:vendedor'])
+     ->name('vendedor.panel');
+
+// Registro de vendedor (formulario y envío)
+Route::middleware('auth')->group(function () {
+    Route::get('/vendedor/registro', [VendedorController::class, 'showRegistro'])
+        ->name('vendedor.registro.show');
+
+    Route::post('/vendedor/registro', [VendedorController::class, 'storeRegistro'])
+        ->name('vendedor.registro.store');
+});
+
+Route::middleware('auth')->group(function () {
+    
+    // Ruta para MOSTRAR el formulario de registro de repartidor
+    Route::get('/repartidor/registro', [RepartidorController::class, 'showRegistro'])
+         ->name('repartidor.registro.show');
+         
+    // Ruta para PROCESAR ese formulario
+    Route::post('/repartidor/registro', [RepartidorController::class, 'storeRegistro'])
+         ->name('repartidor.registro.store');
 });
 
 // Panel delivery 
 Route::get('/delivery', function () {
-    return view('paginas.delivery'); // crea recursos/views/paginas/delivery.blade.php
+    return view('paginas.delivery'); // 
 });
 require __DIR__.'/auth.php';
+
+Route::get('/delivery', function () {
+    return view('paginas.delivery');
+})->middleware(['auth', 'role:repartidor'])
+  ->name('repartidor.panel'); // 
+
+Route::post('/productos', [ProductoController::class, 'store'])
+    ->middleware(['auth', 'role:vendedor'])
+    ->name('producto.store');

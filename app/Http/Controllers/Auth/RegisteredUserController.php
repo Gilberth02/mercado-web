@@ -43,7 +43,7 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // <-- 2. AÑADE ESTA LÓGICA
+        // 
         // Buscamos el rol de 'cliente'.
         $rolCliente = Rol::where('nombre', 'cliente')->first();
 
@@ -51,7 +51,7 @@ class RegisteredUserController extends Controller
         if ($rolCliente) {
             $user->roles()->attach($rolCliente->id);
         }
-        // <-- FIN DE LA LÓGICA AÑADIDA
+        // 
 
         event(new Registered($user));
 
