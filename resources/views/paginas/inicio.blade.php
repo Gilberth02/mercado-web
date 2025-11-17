@@ -6,7 +6,7 @@
   <section id="inicio" class="portada">
     <div class="contenedor portada_centro">
       <figure class="foto">
-        <img src="{{ asset('Vista/img/mercado.png') }}" alt="Imagen principal">
+        <img src="{{ asset('Vista/img/mercado.webp') }}" alt="Imagen principal">
       </figure>
 
       <div class="texto">
@@ -35,7 +35,7 @@
       <div class="cajas">
         <div class="caja" id="cliente">
           <figure class="imagen">
-            <img src="{{ asset('Vista/img/cliente.png') }}" alt="Cliente">
+            <img src="{{ asset('Vista/img/cliente.webp') }}" alt="Cliente">
           </figure>
           <div class="info">
             <h3>Cliente</h3>
@@ -46,7 +46,7 @@
 
         <div class="caja" id="vendedor">
           <figure class="imagen">
-            <img src="{{ asset('Vista/img/vendedor.png') }}" alt="Vendedor">
+            <img src="{{ asset('Vista/img/vendedor.webp') }}" alt="Vendedor">
           </figure>
           <div class="info">
             <h3>Vendedor</h3>
@@ -57,7 +57,7 @@
 
         <div class="caja" id="delivery">
           <figure class="imagen">
-            <img src="{{ asset('Vista/img/repartidor.png') }}" alt="Delivery">
+            <img src="{{ asset('Vista/img/repartidor.webp') }}" alt="Delivery">
           </figure>
           <div class="info">
             <h3>Delivery</h3>

@@ -92,7 +92,7 @@
         </section>
 
         <aside class="lado der">
-          <img class="foto" src="{{ asset('Vista/img/registro.png') }}" alt="Imagen lateral">
+          <img class="foto" src="{{ asset('Vista/img/registro.webp') }}" alt="Imagen lateral">
           <div class="capa"></div>
           <div class="forma uno"></div>
           <div class="forma dos"></div>

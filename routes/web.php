@@ -40,7 +40,7 @@ Route::get('/', function () {
 // Panel cliente 
 Route::get('/cliente', function () {
     return view('paginas.cliente'); // crea recursos/views/paginas/cliente.blade.php
-});
+})->middleware('auth'); //autentificacion para personas autorizadas
 
 // Panel vendedor 
 Route::get('/vendedor', function () {
