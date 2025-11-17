@@ -11,6 +11,9 @@
   <!-- CSS principal del sitio -->
   <link rel="stylesheet" href="{{ asset('Vista/css/style.css') }}">
 
+  <link rel="icon" href="{{ asset('favicon.ico') }}">
+  <link rel="apple-touch-icon" href="{{ asset('favicon.ico') }}">
+
   <!-- CSS adicional por página  -->
   @yield('estilos')
 </head>
@@ -24,14 +27,19 @@
       <nav class="menu">
         <a href="{{ url('/')}}#inicio" class="activo">Inicio</a>
         <a href="{{ url('/')}}#nosotros">Nosotros</a>
+        <a href="{{ route('tienda.index') }}">Tienda</a>
         <a href="{{ url('/')}}#cliente">Cliente</a>
         <a href="{{ url('/')}}#vendedor">Vendedor</a>
         <a href="{{ url('/')}}#delivery">Delivery</a>
 
         <span class="linea"></span>
-
-        <a href="#" class="carrito" aria-label="Carrito">
+{{-- Contar los items en la sesión --}}
+        <a href="{{ route('cart.index') }}" class="carrito" aria-label="Carrito">
           🛒<span class="bola">0</span>
+          
+          @if(session('cart'))
+        <span class="bola">{{ count(session('cart')) }}</span>
+    @endif
         </a>
 
         @guest

@@ -29,8 +29,25 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Redirigir al HOME configurado (página de cliente) en lugar del dashboard
-        // Usamos la constante HOME definida en AppServiceProvider
+        // Redirigir según rol del usuario autenticado.
+        $user = $request->user();
+
+        // Si el usuario es admin -> panel de admin
+        if ($user && $user->roles()->where('nombre', 'admin')->exists()) {
+            return redirect()->intended(route('admin.productos.index'));
+        }
+
+        // Si es vendedor -> panel de vendedor
+        if ($user && $user->roles()->where('nombre', 'vendedor')->exists()) {
+            return redirect()->intended(route('vendedor.panel'));
+        }
+
+        // Si es repartidor -> panel de repartidor
+        if ($user && $user->roles()->where('nombre', 'repartidor')->exists()) {
+            return redirect()->intended(route('repartidor.panel'));
+        }
+
+        // Por defecto, usar el HOME configurado (cliente)
         return redirect()->intended(\App\Providers\AppServiceProvider::HOME);
     }
 

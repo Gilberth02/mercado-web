@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\WebpEncoder;
 
 class ProductoController extends Controller
 {
@@ -27,12 +27,12 @@ class ProductoController extends Controller
         ]);
     }
 
-    /**
-     * Guarda un nuevo producto en la base de datos (y convierte la imagen).
-     */
+   
+     // Guarda un nuevo producto en la base de datos (y convierte la imagen).
+    
     public function store(Request $request)
     {
-        // 1. Validación de todos los campos del formulario
+        //  Validación de todos los campos del formulario
         $request->validate([
             'nombre' => 'required|string|max:150',
             'descripcion' => 'nullable|string',
@@ -44,19 +44,32 @@ class ProductoController extends Controller
 
         $path_imagen = null;
 
-        // 2. Lógica de Imagen (Conversión a WebP)
+        //  Lógica de Imagen (Conversión a WebP)
         if ($request->hasFile('imagen')) {
-            $manager = new ImageManager(new Driver());
-            $imagen = $manager->read($request->file('imagen'));
-            $nombreUnico = (string) Str::uuid() . '.webp';
-            
-            // Convierte y guarda la imagen en formato WebP (calidad 80)
-            $imagen->toWebp(80)->save(storage_path('app/public/productos/' . $nombreUnico));
-            
-            $path_imagen = 'productos/' . $nombreUnico;
+            try {
+                // Preferir Imagick si está disponible, sino GD
+                if (extension_loaded('imagick')) {
+                    $manager = ImageManager::imagick();
+                } elseif (extension_loaded('gd')) {
+                    $manager = ImageManager::gd();
+                } else {
+                    throw new \Exception('No image driver available (gd or imagick)');
+                }
+
+                // Crear y convertir la imagen a WebP (usar API v3: read en vez de make)
+                $imagen = $manager->read($request->file('imagen')->getRealPath());
+                $nombreUnico = (string) Str::uuid() . '.webp';
+                $encoded = $imagen->encode(new WebpEncoder(80));
+                $encoded->save(storage_path('app/public/productos/' . $nombreUnico));
+                $path_imagen = 'productos/' . $nombreUnico;
+            } catch (\Exception $e) {
+                // Si falla la conversión (p. ej. falta GD), hacemos fallback: guardar el archivo original
+                \Log::warning('Image conversion failed, falling back to original. '.$e->getMessage());
+                $path_imagen = $request->file('imagen')->store('productos', 'public');
+            }
         }
 
-        // 3. Guardar en Base de Datos
+        //  Guardar en Base de Datos
         Producto::create([
             'vendedor_id' => Auth::user()->vendedor->user_id, // ID del Vendedor
             'categoria_id' => $request->categoria_id,
@@ -69,7 +82,21 @@ class ProductoController extends Controller
             'activo' => true,
         ]);
 
-        // 4. Redirigir de vuelta al panel con mensaje de éxito
+        //  Redirigir de vuelta al panel con mensaje de éxito
         return redirect()->route('vendedor.panel')->with('success', '¡Producto subido! Está pendiente de revisión.');
+    }
+
+    
+     // Muestra la tienda pública (solo productos publicados).
+     
+    public function indexPublico()
+    {
+        $productos = Producto::where('estado', 'publicado')
+                            ->with('vendedor') // Carga la info del vendedor
+                            ->get();
+        
+        return view('paginas.tienda', [
+            'productos' => $productos
+        ]);
     }
 }

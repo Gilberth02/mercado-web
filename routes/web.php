@@ -7,6 +7,8 @@ use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\VendedorController;
 use App\Http\Controllers\RepartidorController;
 use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\CartController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -84,3 +86,50 @@ Route::get('/delivery', function () {
 Route::post('/productos', [ProductoController::class, 'store'])
     ->middleware(['auth', 'role:vendedor'])
     ->name('producto.store');
+
+// Tienda pública (lista productos publicados)
+Route::get('/tienda', [ProductoController::class, 'indexPublico'])
+    ->name('tienda.index');
+
+// Rutas públicas del carrito
+Route::get('/carrito', [CartController::class, 'index'])->name('cart.index');
+Route::post('/carrito/add/{producto}', [CartController::class, 'add'])->name('cart.add');
+Route::post('/carrito/remove/{producto}', [CartController::class, 'remove'])->name('cart.remove');
+
+
+    
+// Rutas para el panel de administración
+
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    
+    // Ruta principal del panel 
+    // URL: /admin/productos
+    Route::get('/productos', [AdminController::class, 'index'])->name('productos.index');
+    
+    // Ruta para APROBAR un producto 
+    
+    Route::patch('/productos/{producto}/aprobar', [AdminController::class, 'aprobar'])
+         ->name('productos.aprobar');
+         
+    // Ruta para RECHAZAR un producto (botón)
+    
+    Route::delete('/productos/{producto}/rechazar', [AdminController::class, 'rechazar'])
+         ->name('productos.rechazar');
+
+    Route::get('/repartidores', [AdminController::class, 'showRepartidores'])
+            ->name('repartidores.index');
+
+    Route::get('/categorias', [AdminController::class, 'showCategorias'])
+            ->name('categorias.index');
+         
+    // Para PROCESAR el formulario de nueva categoría (POST)
+    Route::post('/categorias', [AdminController::class, 'storeCategoria'])
+         ->name('categorias.store');
+
+    Route::get('/tienda', [ProductoController::class, 'indexPublico'])->name('tienda.index');
+
+    //carrito
+    Route::get('/carrito', [CartController::class, 'index'])->name('cart.index');
+    Route::post('/carrito/add/{producto}', [CartController::class, 'add'])->name('cart.add');
+    Route::post('/carrito/remove/{producto}', [CartController::class, 'remove'])->name('cart.remove');
+});
