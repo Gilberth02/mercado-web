@@ -26,11 +26,9 @@
 
         @guest
           <a href="{{ route('login') }}" class="boton">Comprar ahora</a>
+          <a href="{{ route('login') }}" class="boton_borde">Ingresar</a>
         @else
-          <form method="POST" action="{{ route('logout') }}" style="display:inline">
-            @csrf
-            <button type="submit" class="boton">Cerrar sesión</button>
-          </form>
+          <a href="{{ route('tienda.index') }}" class="boton">Comprar ahora</a>
         @endguest
       </div>
     </div>
@@ -49,11 +47,6 @@
             <p>Explora productos y realiza tus compras en línea.</p>
             @guest
               <a href="{{ route('login') }}" class="boton_borde">Ingresar</a>
-            @else
-              <form method="POST" action="{{ route('logout') }}" style="display:inline">
-                @csrf
-                <button type="submit" class="boton_borde">Cerrar sesión</button>
-              </form>
             @endguest
           </div>
         </div>
@@ -67,11 +60,6 @@
             <p>Publica productos y gestiona tus ventas.</p>
             @guest
               <a href="{{ route('login') }}" class="boton_borde">Ingresar</a>
-            @else
-              <form method="POST" action="{{ route('logout') }}" style="display:inline">
-                @csrf
-                <button type="submit" class="boton_borde">Cerrar sesión</button>
-              </form>
             @endguest
           </div>
         </div>
@@ -85,11 +73,6 @@
             <p>Accede a pedidos y realiza entregas.</p>
             @guest
               <a href="{{ route('login') }}" class="boton_borde">Ingresar</a>
-            @else
-              <form method="POST" action="{{ route('logout') }}" style="display:inline">
-                @csrf
-                <button type="submit" class="boton_borde">Cerrar sesión</button>
-              </form>
             @endguest
           </div>
         </div>

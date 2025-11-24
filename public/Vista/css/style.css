@@ -343,3 +343,47 @@ body {
     text-align: center;
   }
 }
+
+/* ===== TABLAS Y UTILIDADES ===== */
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 15px;
+}
+
+.tabla thead th {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e6e6e6;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  color: #333;
+}
+
+.tabla tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f2f2f2;
+  color: #444;
+}
+
+.tabla tbody tr:hover td {
+  background: #fbfbfb;
+}
+
+.tabla .acciones .boton {
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+/* Hacer tablas horizontales en pantallas pequeñas */
+.tabla_responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.small { font-size: 13px; }
+
+/* Modal helper visible only when we use it */
+.modal { display: none; }
+

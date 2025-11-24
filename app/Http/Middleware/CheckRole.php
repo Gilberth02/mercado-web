@@ -33,7 +33,7 @@ class CheckRole
         }
 
         // 4. Si el bucle termina, significa que no tuvo el rol.
-        // Lo redirigimos al HOME (en tu caso, /cliente) con un error.
-        return redirect(config('fortify.home'))->with('error', 'No tienes permiso para acceder a esa sección.');
+        // Lo redirigimos al panel cliente con un mensaje de error.
+        return redirect()->route('cliente.redirect')->with('error', 'No tienes permiso para acceder a esa sección.');
     }
 }

@@ -42,10 +42,10 @@ Route::get('/', function () {
  //   return view('paginas.registro');
 //});
 
-// Panel cliente 
+// Panel cliente (muestra opciones para el cliente: transformarse en vendedor o delivery)
 Route::get('/cliente', function () {
-    return view('paginas.cliente'); // crea recursos/views/paginas/cliente.blade.php
-})->middleware('auth'); //autentificacion para personas autorizadas
+    return view('paginas.cliente');
+})->middleware('auth')->name('cliente.redirect');
 
 // Panel vendedor 
 Route::get('/vendedor', [ProductoController::class, 'create'])
@@ -73,19 +73,54 @@ Route::middleware('auth')->group(function () {
 });
 
 // Panel delivery 
-Route::get('/delivery', function () {
-    return view('paginas.delivery'); // 
-});
-require __DIR__.'/auth.php';
+// Repartidor panel (handled by controller to show pedidos)
+Route::get('/delivery', [RepartidorController::class, 'panel'])
+    ->middleware(['auth', 'role:repartidor'])
+    ->name('repartidor.panel');
 
-Route::get('/delivery', function () {
-    return view('paginas.delivery');
-})->middleware(['auth', 'role:repartidor'])
-  ->name('repartidor.panel'); // 
+// Toggle disponibilidad (repartidor)
+Route::post('/repartidor/toggle-disponible', [RepartidorController::class, 'toggleDisponible'])
+    ->middleware(['auth', 'role:repartidor'])
+    ->name('repartidor.toggle_disponible');
+// Rutas para acciones del repartidor: asignar y marcar entregado
+Route::post('/repartidor/asignar/{pedido}', [RepartidorController::class, 'asignar'])
+    ->middleware(['auth', 'role:repartidor'])
+    ->name('repartidor.asignar');
+
+Route::post('/repartidor/entregar/{pedido}', [RepartidorController::class, 'marcarEntregado'])
+    ->middleware(['auth', 'role:repartidor'])
+    ->name('repartidor.entregar');
+
+Route::post('/repartidor/por-recoger/{pedido}', [RepartidorController::class, 'marcarPorRecoger'])
+    ->middleware(['auth', 'role:repartidor'])
+    ->name('repartidor.por_recoger');
+
+Route::post('/repartidor/en-camino/{pedido}', [RepartidorController::class, 'marcarEnCamino'])
+    ->middleware(['auth', 'role:repartidor'])
+    ->name('repartidor.en_camino');
+require __DIR__.'/auth.php';
 
 Route::post('/productos', [ProductoController::class, 'store'])
     ->middleware(['auth', 'role:vendedor'])
     ->name('producto.store');
+
+// Toggle activo por parte del vendedor (habilitar / deshabilitar su propio producto)
+Route::patch('/vendedor/productos/{producto}/toggle', [ProductoController::class, 'toggleActivo'])
+    ->middleware(['auth', 'role:vendedor'])
+    ->name('vendedor.productos.toggle');
+
+// Rutas para editar/actualizar/eliminar un producto por parte del vendedor
+Route::get('/vendedor/productos/{producto}/edit', [ProductoController::class, 'edit'])
+    ->middleware(['auth', 'role:vendedor'])
+    ->name('vendedor.productos.edit');
+
+Route::patch('/vendedor/productos/{producto}', [ProductoController::class, 'update'])
+    ->middleware(['auth', 'role:vendedor'])
+    ->name('vendedor.productos.update');
+
+Route::delete('/vendedor/productos/{producto}', [ProductoController::class, 'destroy'])
+    ->middleware(['auth', 'role:vendedor'])
+    ->name('vendedor.productos.destroy');
 
 // Tienda pública (lista productos publicados)
 Route::get('/tienda', [ProductoController::class, 'indexPublico'])
@@ -95,6 +130,11 @@ Route::get('/tienda', [ProductoController::class, 'indexPublico'])
 Route::get('/carrito', [CartController::class, 'index'])->name('cart.index');
 Route::post('/carrito/add/{producto}', [CartController::class, 'add'])->name('cart.add');
 Route::post('/carrito/remove/{producto}', [CartController::class, 'remove'])->name('cart.remove');
+Route::patch('/carrito/update/{producto}', [CartController::class, 'update'])->name('cart.update');
+Route::post('/carrito/clear', [CartController::class, 'clear'])->name('cart.clear');
+// Checkout público: formulario y procesamiento
+Route::get('/carrito/checkout', [CartController::class, 'checkoutForm'])->name('cart.checkout.form');
+Route::post('/carrito/checkout', [CartController::class, 'processCheckout'])->name('cart.checkout.process');
 
 
     
@@ -116,6 +156,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/productos/{producto}/rechazar', [AdminController::class, 'rechazar'])
          ->name('productos.rechazar');
 
+        // Ruta para alternar activo (habilitar / deshabilitar)
+        Route::patch('/productos/{producto}/toggle', [AdminController::class, 'toggleActivo'])
+            ->name('productos.toggle');
+
     Route::get('/repartidores', [AdminController::class, 'showRepartidores'])
             ->name('repartidores.index');
 
@@ -132,4 +176,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/carrito', [CartController::class, 'index'])->name('cart.index');
     Route::post('/carrito/add/{producto}', [CartController::class, 'add'])->name('cart.add');
     Route::post('/carrito/remove/{producto}', [CartController::class, 'remove'])->name('cart.remove');
+    Route::patch('/carrito/update/{producto}', [CartController::class, 'update'])->name('cart.update');
+    Route::post('/carrito/clear', [CartController::class, 'clear'])->name('cart.clear');
+    // Checkout
+    Route::get('/carrito/checkout', [CartController::class, 'checkoutForm'])->name('cart.checkout.form');
+    Route::post('/carrito/checkout', [CartController::class, 'processCheckout'])->name('cart.checkout.process');
 });

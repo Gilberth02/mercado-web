@@ -17,6 +17,8 @@ class Producto extends Model
         'imagen',
         'estado',
         'activo',
+        'rechazo_motivo',
+        'propuesta_edicion',
     ];
 
     // app/Models/Producto.php

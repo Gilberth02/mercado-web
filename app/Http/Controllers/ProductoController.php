@@ -6,6 +6,7 @@ use App\Models\Categoria;
 use App\Models\Producto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Encoders\WebpEncoder;
@@ -21,9 +22,27 @@ class ProductoController extends Controller
         // 1. Obtenemos todas las categorías de la BD
         $categorias = Categoria::all();
         
-        // 2. Pasamos las categorías a la vista
+        // 2. Obtenemos los productos de este vendedor (si tiene perfil de vendedor)
+        $productos = collect();
+        if (Auth::user() && Auth::user()->vendedor) {
+            $vendedorId = Auth::user()->vendedor->user_id;
+            $productos = Producto::where('vendedor_id', $vendedorId)->get();
+        }
+
+        // 3. Obtenemos los pedidos que contienen productos de este vendedor
+        $pedidos = collect();
+        if (Auth::user() && Auth::user()->vendedor) {
+            $vendedorId = Auth::user()->vendedor->user_id;
+            $pedidos = \App\Models\Pedido::whereHas('detalles.producto', function($q) use ($vendedorId) {
+                $q->where('vendedor_id', $vendedorId);
+            })->with(['detalles.producto.vendedor.user', 'asignacion.repartidor.user', 'cliente'])->get();
+        }
+
+        // 4. Pasamos las categorías, productos y pedidos a la vista
         return view('paginas.vendedor', [
-            'categorias' => $categorias
+            'categorias' => $categorias,
+            'productos' => $productos,
+            'pedidos' => $pedidos,
         ]);
     }
 
@@ -92,11 +111,164 @@ class ProductoController extends Controller
     public function indexPublico()
     {
         $productos = Producto::where('estado', 'publicado')
+                            ->where('activo', true)
                             ->with('vendedor') // Carga la info del vendedor
                             ->get();
         
         return view('paginas.tienda', [
             'productos' => $productos
         ]);
+    }
+
+    /**
+     * Alterna el campo `activo` de un producto.
+     * Sólo el vendedor propietario puede hacerlo.
+     */
+    public function toggleActivo(Request $request, Producto $producto)
+    {
+        $user = Auth::user();
+
+        // Verificar que el usuario sea vendedor y propietario del producto
+        if (!$user || !$user->vendedor || $user->vendedor->user_id !== $producto->vendedor_id) {
+            abort(403, 'No autorizado.');
+        }
+
+        $producto->activo = !$producto->activo;
+        $producto->save();
+
+        // Si la petición es AJAX, devolvemos JSON para actualización en cliente
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'activo' => (bool) $producto->activo,
+                'mensaje' => 'Estado de producto actualizado.'
+            ]);
+        }
+
+        return redirect()->route('vendedor.panel')->with('success', 'Estado de producto actualizado.');
+    }
+
+    /**
+     * Mostrar formulario de edición para un producto del vendedor.
+     */
+    public function edit(Producto $producto)
+    {
+        $user = Auth::user();
+        if (!$user || !$user->vendedor || $user->vendedor->user_id !== $producto->vendedor_id) {
+            abort(403, 'No autorizado.');
+        }
+
+        $categorias = Categoria::all();
+        return view('paginas.vendedor_edit', [
+            'producto' => $producto,
+            'categorias' => $categorias,
+        ]);
+    }
+
+    /**
+     * Actualiza un producto. Los cambios quedan en estado 'pendiente' para aprobación.
+     */
+    public function update(Request $request, Producto $producto)
+    {
+        $user = Auth::user();
+        if (!$user || !$user->vendedor || $user->vendedor->user_id !== $producto->vendedor_id) {
+            abort(403, 'No autorizado.');
+        }
+
+        $request->validate([
+            'nombre' => 'required|string|max:150',
+            'descripcion' => 'nullable|string',
+            'precio' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'categoria_id' => 'required|exists:categorias,id',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        // Procesar imagen nueva si existe
+        $nuevaImagenPath = null;
+        if ($request->hasFile('imagen')) {
+            try {
+                if (extension_loaded('imagick')) {
+                    $manager = ImageManager::imagick();
+                } elseif (extension_loaded('gd')) {
+                    $manager = ImageManager::gd();
+                } else {
+                    throw new \Exception('No image driver available (gd or imagick)');
+                }
+
+                $imagen = $manager->read($request->file('imagen')->getRealPath());
+                $nombreUnico = (string) Str::uuid() . '.webp';
+                $encoded = $imagen->encode(new WebpEncoder(80));
+                $encoded->save(storage_path('app/public/productos/' . $nombreUnico));
+
+                // Para la propuesta guardamos la nueva imagen pero NO sobrescribimos la imagen actual del producto
+                $nuevaImagenPath = 'productos/' . $nombreUnico;
+            } catch (\Exception $e) {
+                \Log::warning('Image conversion failed on update, falling back. '.$e->getMessage());
+                $path = $request->file('imagen')->store('productos', 'public');
+                $nuevaImagenPath = $path;
+            }
+        }
+
+        // Si el producto está publicado, no sobrescribimos sus datos visibles:
+        // guardamos la propuesta de edición en JSON y marcamos como 'pendiente'.
+        if ($producto->estado === 'publicado') {
+            $propuesta = [
+                'nombre' => $request->nombre,
+                'descripcion' => $request->descripcion,
+                'precio' => $request->precio,
+                'stock' => $request->stock,
+                'categoria_id' => $request->categoria_id,
+            ];
+            if ($nuevaImagenPath) {
+                $propuesta['imagen'] = $nuevaImagenPath;
+            }
+
+            // Guardamos la propuesta sin modificar el producto publicado hasta que el admin apruebe
+            $producto->propuesta_edicion = json_encode($propuesta);
+            $producto->save();
+
+            return redirect()->route('vendedor.panel')->with('success', 'Propuesta de edición enviada. Un administrador revisará y aprobará los cambios.');
+        }
+
+        // Para productos que no estaban publicados, aplicamos los cambios directamente y los marcamos como pendientes.
+        $producto->nombre = $request->nombre;
+        $producto->descripcion = $request->descripcion;
+        $producto->precio = $request->precio;
+        $producto->stock = $request->stock;
+        $producto->categoria_id = $request->categoria_id;
+        if ($nuevaImagenPath) {
+            // eliminar imagen anterior si existe
+            if ($producto->imagen) {
+                Storage::disk('public')->delete($producto->imagen);
+            }
+            $producto->imagen = $nuevaImagenPath;
+        }
+
+        // Marcar como pendiente para que el admin revise los cambios
+        $producto->estado = 'pendiente';
+        $producto->save();
+
+        return redirect()->route('vendedor.panel')->with('success', 'Cambios guardados. Un administrador revisará la actualización.');
+    }
+
+    /**
+     * Eliminar un producto (propietario vendedor).
+     */
+    public function destroy(Producto $producto)
+    {
+        $user = Auth::user();
+        if (!$user || !$user->vendedor || $user->vendedor->user_id !== $producto->vendedor_id) {
+            abort(403, 'No autorizado.');
+        }
+
+        // Eliminar imagen del storage si existe
+        if ($producto->imagen) {
+            Storage::disk('public')->delete($producto->imagen);
+        }
+
+        $producto->delete();
+
+        return redirect()->route('vendedor.panel')->with('success', 'Producto eliminado.');
     }
 }

@@ -57,12 +57,13 @@ class SocialiteController extends Controller
                 Auth::login($newUser);
             }
 
-            // Redirigimos al dashboard (o a la ruta que quieras)
-            return redirect(config('fortify.home'));
+            // Redirigimos a la página cliente (opciones para convertirse en vendedor o delivery)
+            return redirect()->route('cliente.redirect');
 
         } catch (\Exception $e) {
-            // Si algo falla (ej: el usuario cancela), lo regresamos al login
-            return redirect(route('login'));
+            // Loguear el error para diagnóstico y regresar al login con mensaje
+            \Log::error('Socialite Google callback error: ' . $e->getMessage());
+            return redirect(route('login'))->with('error', 'Error en inicio con Google: ' . $e->getMessage());
         }
     }
 }
