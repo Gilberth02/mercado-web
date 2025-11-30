@@ -26,7 +26,9 @@ class ProductoController extends Controller
         $productos = collect();
         if (Auth::user() && Auth::user()->vendedor) {
             $vendedorId = Auth::user()->vendedor->user_id;
-            $productos = Producto::where('vendedor_id', $vendedorId)->get();
+            $productos = Producto::where('vendedor_id', $vendedorId)
+                ->orderBy('created_at', 'desc')
+                ->get();
         }
 
         // 3. Obtenemos los pedidos que contienen productos de este vendedor
@@ -35,7 +37,9 @@ class ProductoController extends Controller
             $vendedorId = Auth::user()->vendedor->user_id;
             $pedidos = \App\Models\Pedido::whereHas('detalles.producto', function($q) use ($vendedorId) {
                 $q->where('vendedor_id', $vendedorId);
-            })->with(['detalles.producto.vendedor.user', 'asignacion.repartidor.user', 'cliente'])->get();
+            })->with(['detalles.producto.vendedor.user', 'asignacion.repartidor.user', 'cliente'])
+            ->orderBy('created_at', 'desc')
+            ->get();
         }
 
         // 4. Pasamos las categorías, productos y pedidos a la vista
@@ -108,15 +112,48 @@ class ProductoController extends Controller
     
      // Muestra la tienda pública (solo productos publicados).
      
-    public function indexPublico()
+    public function indexPublico(Request $request)
     {
-        $productos = Producto::where('estado', 'publicado')
-                            ->where('activo', true)
-                            ->with('vendedor') // Carga la info del vendedor
-                            ->get();
+        $query = Producto::where('estado', 'publicado')
+                         ->where('activo', true)
+                         ->with(['vendedor', 'resenas']);
+        
+        // Filtro de búsqueda
+        if ($request->filled('buscar')) {
+            $buscar = $request->buscar;
+            $query->where(function($q) use ($buscar) {
+                $q->where('nombre', 'like', '%' . $buscar . '%')
+                  ->orWhere('descripcion', 'like', '%' . $buscar . '%');
+            });
+        }
+        
+        // Filtro de categoría
+        if ($request->filled('categoria')) {
+            $query->where('categoria_id', $request->categoria);
+        }
+        
+        // Ordenamiento
+        $orden = $request->get('orden', 'reciente');
+        switch ($orden) {
+            case 'precio_asc':
+                $query->orderBy('precio', 'asc');
+                break;
+            case 'precio_desc':
+                $query->orderBy('precio', 'desc');
+                break;
+            case 'nombre':
+                $query->orderBy('nombre', 'asc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+        
+        $productos = $query->paginate(12)->withQueryString();
+        $categorias = \App\Models\Categoria::all();
         
         return view('paginas.tienda', [
-            'productos' => $productos
+            'productos' => $productos,
+            'categorias' => $categorias
         ]);
     }
 
@@ -270,5 +307,20 @@ class ProductoController extends Controller
         $producto->delete();
 
         return redirect()->route('vendedor.panel')->with('success', 'Producto eliminado.');
+    }
+
+    public function show(Producto $producto)
+    {
+        // Verificamos que esté publicado y activo (por seguridad)
+        if ($producto->estado !== 'publicado' || !$producto->activo) {
+            abort(404); // O redirigir a la tienda
+        }
+
+        // Cargamos las reseñas y el vendedor para usarlos en la vista
+        $producto->load(['vendedor', 'resenas.user']); 
+
+        return view('paginas.producto-detalle', [
+            'producto' => $producto
+        ]);
     }
 }

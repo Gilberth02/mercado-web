@@ -6,6 +6,8 @@ use App\Models\Producto; // Importamos el modelo Producto
 use App\Models\Categoria;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Repartidor;
+use App\Models\Rol;
 
 class AdminController extends Controller
 {
@@ -18,6 +20,7 @@ class AdminController extends Controller
                                                                     ->orWhereNotNull('propuesta_edicion');
                                                         })
                                                         ->with('vendedor')
+                                                        ->orderBy('created_at', 'desc')
                                                         ->get();
 
         // Pasamos los productos a la vista de admin
@@ -50,6 +53,13 @@ class AdminController extends Controller
         $producto->estado = 'publicado';
         $producto->save();
 
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Producto aprobado y publicado.'
+            ]);
+        }
+
         return redirect()->route('admin.productos.index')->with('success', 'Producto aprobado y publicado.');
     }
 
@@ -63,6 +73,14 @@ class AdminController extends Controller
         $producto->save();
 
         $mensaje = $producto->activo ? 'Producto habilitado.' : 'Producto deshabilitado.';
+        
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $mensaje
+            ]);
+        }
+        
         return redirect()->route('admin.productos.index')->with('success', $mensaje);
     }
 
@@ -84,6 +102,13 @@ class AdminController extends Controller
             $producto->propuesta_edicion = null;
             // mantener estado tal como está (normalmente 'publicado')
             $producto->save();
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Solicitud de edición rechazada. Se guardó el motivo.'
+                ]);
+            }
             return redirect()->route('admin.productos.index')->with('success', 'Solicitud de edición rechazada. Se guardó el motivo.');
         }
 
@@ -96,18 +121,33 @@ class AdminController extends Controller
             $producto->estado = 'rechazado';
             $producto->rechazo_motivo = $request->input('motivo');
             $producto->save();
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Producto rechazado. Se guardó el motivo.'
+                ]);
+            }
             return redirect()->route('admin.productos.index')->with('success', 'Producto rechazado. Se guardó el motivo.');
         }
 
         // Para otros estados, si el admin desea eliminarlo completamente, mantenemos la eliminación.
         $producto->delete();
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Producto eliminado.'
+            ]);
+        }
         return redirect()->route('admin.productos.index')->with('success', 'Producto eliminado.');
     }
 
     public function showRepartidores()
     {
-        // Buscamos todos los Usuarios que tengan el rol 'repartidor'
-        $repartidores = User::whereHas('roles', function ($query) {
+        // Listado mixto: pendientes (sin rol) y aprobados (con rol)
+        $pendientes = Repartidor::where('estado', 'pendiente')->with('user')->get();
+        $aprobados = User::whereHas('roles', function ($query) {
                                 $query->where('nombre', 'repartidor');
                             })
                             ->with('repartidor')
@@ -115,8 +155,43 @@ class AdminController extends Controller
         
         // Pasamos los datos a la nueva vista
         return view('admin.repartidores', [
-            'repartidores' => $repartidores
+            'pendientes' => $pendientes,
+            'aprobados' => $aprobados
         ]);
+    }
+
+    public function aprobarRepartidor(Repartidor $repartidor)
+    {
+        $user = $repartidor->user;
+        $rol = Rol::where('nombre', 'repartidor')->first();
+        if ($rol && $user && ! $user->roles()->where('rol_id', $rol->id)->exists()) {
+            $user->roles()->attach($rol->id);
+        }
+        $repartidor->estado = 'aprobado';
+        $repartidor->save();
+        
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Repartidor aprobado.'
+            ]);
+        }
+        return redirect()->route('admin.repartidores.index')->with('success', 'Repartidor aprobado.');
+    }
+
+    public function rechazarRepartidor(Request $request, Repartidor $repartidor)
+    {
+        // Opcional: motivo
+        $repartidor->estado = 'rechazado';
+        $repartidor->save();
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Solicitud de repartidor rechazada.'
+            ]);
+        }
+        return redirect()->route('admin.repartidores.index')->with('success', 'Solicitud de repartidor rechazada.');
     }
     
     public function showCategorias()
@@ -141,9 +216,17 @@ class AdminController extends Controller
         ]);
 
         // Creamos la nueva categoría
-        Categoria::create([
+        $categoria = Categoria::create([
             'nombre' => $request->nombre
         ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => '¡Categoría creada exitosamente!',
+                'categoria' => $categoria
+            ]);
+        }
 
         // Redirigimos de vuelta con un mensaje de éxito
         return redirect()->route('admin.categorias.index')->with('success', '¡Categoría creada exitosamente!');

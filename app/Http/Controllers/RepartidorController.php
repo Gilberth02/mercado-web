@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth; // Importamos Auth
 use App\Models\Pedido;
 use App\Models\AsignacionEnvio;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 
 class RepartidorController extends Controller
 {
@@ -45,16 +46,23 @@ class RepartidorController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Reseñas del repartidor
+        $repartidor = Auth::user()->repartidor;
+        $resenas = $repartidor ? $repartidor->resenas()->with('user', 'pedido')->latest()->get() : collect();
+        $promedioCalificacion = $repartidor ? round($repartidor->promedioCalificacion(), 1) : 0;
+
         return view('paginas.delivery', [
             'pendientes' => $pendientes,
-            'asignados' => $asignados
+            'asignados' => $asignados,
+            'resenas' => $resenas,
+            'promedioCalificacion' => $promedioCalificacion,
         ]);
     }
 
     /**
      * El repartidor reclama (se asigna) un pedido.
      */
-    public function asignar(Request $request, Pedido $pedido): RedirectResponse
+    public function asignar(Request $request, Pedido $pedido): RedirectResponse|JsonResponse
     {
         $userId = Auth::id();
 
@@ -88,7 +96,7 @@ class RepartidorController extends Controller
     /**
      * Marcar un pedido como entregado.
      */
-    public function marcarEntregado(Request $request, Pedido $pedido): RedirectResponse
+    public function marcarEntregado(Request $request, Pedido $pedido): RedirectResponse|JsonResponse
     {
         $userId = Auth::id();
 
@@ -114,7 +122,7 @@ class RepartidorController extends Controller
     /**
      * Marcar pedido como 'por recoger' (repartidor indica que está yendo a recoger).
      */
-    public function marcarPorRecoger(Request $request, Pedido $pedido): RedirectResponse
+    public function marcarPorRecoger(Request $request, Pedido $pedido): RedirectResponse|JsonResponse
     {
         $userId = Auth::id();
         $asignacion = $pedido->asignacion;
@@ -138,7 +146,7 @@ class RepartidorController extends Controller
     /**
      * Marcar pedido como 'en camino' (ya fue recogido y está en ruta hacia el cliente).
      */
-    public function marcarEnCamino(Request $request, Pedido $pedido): RedirectResponse
+    public function marcarEnCamino(Request $request, Pedido $pedido): RedirectResponse|JsonResponse
     {
         $userId = Auth::id();
         $asignacion = $pedido->asignacion;
@@ -162,7 +170,7 @@ class RepartidorController extends Controller
     /**
      * Alterna el estado de disponibilidad del repartidor autenticado.
      */
-    public function toggleDisponible(Request $request): RedirectResponse
+    public function toggleDisponible(Request $request): RedirectResponse|JsonResponse
     {
         $user = Auth::user();
 
@@ -194,27 +202,46 @@ class RepartidorController extends Controller
         $request->validate([
             'vehiculo' => 'required|string|max:100',
             'matricula' => 'required|string|max:20',
+            'telefono' => ['required','regex:/^\d{9}$/'],
         ]);
 
         $user = Auth::user();
 
-        // 1. Creamos el perfil en la tabla 'repartidores'
-        Repartidor::create([
-            'user_id' => $user->id,
-            'vehiculo' => $request->vehiculo,
-            'matricula' => $request->matricula,
-            'disponible' => true, // Lo ponemos disponible por defecto
-        ]);
+        // 1. Actualizamos el teléfono en el perfil de usuario
+        $user->telefono = $request->telefono;
+        $user->save();
 
-        // 2. Buscamos el rol 'repartidor'
-        $rolRepartidor = Rol::where('nombre', 'repartidor')->first();
-
-        // 3. Le asignamos el nuevo rol
-        if ($rolRepartidor) {
-            $user->roles()->attach($rolRepartidor->id);
+        // 2. Crear o reactivar solicitud en la tabla 'repartidores'
+        $perfil = Repartidor::where('user_id', $user->id)->first();
+        if ($perfil) {
+            // Si fue rechazado, permitir reenviar: actualizar datos y pasar a pendiente
+            if ($perfil->estado === 'rechazado') {
+                $perfil->vehiculo = $request->vehiculo;
+                $perfil->matricula = $request->matricula;
+                $perfil->estado = 'pendiente';
+                $perfil->save();
+            } else {
+                // Si ya existe y no está rechazado, mantenemos su estado y actualizamos datos mínimos
+                $perfil->vehiculo = $request->vehiculo;
+                $perfil->matricula = $request->matricula;
+                $perfil->save();
+            }
+        } else {
+            Repartidor::create([
+                'user_id' => $user->id,
+                'vehiculo' => $request->vehiculo,
+                'matricula' => $request->matricula,
+                'estado' => 'pendiente',
+                'disponible' => true, // Lo ponemos disponible por defecto
+            ]);
         }
 
-        // 4. Redirigimos al panel de repartidor
-        return redirect()->route('repartidor.panel')->with('success', '¡Felicidades! Ya eres repartidor.');
+        // 3. Buscamos el rol 'repartidor'
+        $rolRepartidor = Rol::where('nombre', 'repartidor')->first();
+
+        // 4. No asignamos rol hasta aprobación del admin
+
+        // 5. Redirigimos con mensaje de solicitud enviada
+        return redirect()->route('cliente.redirect')->with('success', 'Solicitud enviada. El administrador revisará tu registro de delivery.');
     }
 }

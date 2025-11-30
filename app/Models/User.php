@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'telefono',
+        'profile_photo_path',
     ];
 
     /**
@@ -80,6 +81,32 @@ public function pedidos()
 {
     // Un Usuario tiene muchos Pedidos (como cliente)
     return $this->hasMany(Pedido::class, 'cliente_id');
+}
+
+/**
+ * Obtener la URL de la foto de perfil.
+ * Si no tiene, retorna una imagen por defecto.
+ */
+public function getProfilePhotoUrlAttribute()
+{
+    if ($this->profile_photo_path) {
+        // Si la URL empieza con http, es una URL externa (ej: Google)
+        if (filter_var($this->profile_photo_path, FILTER_VALIDATE_URL)) {
+            // Optimizar URL de Google añadiendo parámetro de tamaño
+            $url = $this->profile_photo_path;
+            if (strpos($url, 'googleusercontent.com') !== false) {
+                // Remover parámetros existentes y agregar tamaño específico
+                $url = preg_replace('/=s\d+-c/', '', $url);
+                $url = rtrim($url, '?') . '?sz=200';
+            }
+            return $url;
+        }
+        // Si no, es una ruta local
+        return asset('storage/' . $this->profile_photo_path);
+    }
+    
+    // Imagen por defecto del proyecto
+    return asset('Vista/img/avatar.png');
 }
 }
 

@@ -20,15 +20,22 @@ class CreateNewUser implements CreatesNewUsers
     public function create(array $input): User
     {
         Validator::make($input, [
-            'name' => ['required', 'string', 'max:255'],
+            // Solo letras y espacios (incluye acentos), sin números
+            'name' => ['required', 'string', 'max:255', 'regex:/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/'],
             'email' => [
                 'required',
                 'string',
-                'email',
+                'email:rfc,dns',
                 'max:255',
+                // Solo correos @gmail.com o @hotmail.com
+                'regex:/^[\\w.+-]+@(gmail\\.com|hotmail\\.com)$/',
                 Rule::unique(User::class),
             ],
             'password' => $this->passwordRules(),
+        ], [
+            'name.regex' => 'El nombre solo puede contener letras y espacios.',
+            'email.email' => 'El correo debe ser válido (formato RFC).',
+            'email.regex' => 'Solo se permiten correos @gmail.com o @hotmail.com.',
         ])->validate();
 
         return User::create([

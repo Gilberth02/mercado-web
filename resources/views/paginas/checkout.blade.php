@@ -23,6 +23,11 @@
         }
         /* Slightly smaller map height to avoid pushing footer too far */
         #map { max-height: 420px; height: 380px; }
+        @media (max-width: 640px) {
+            .checkout-actions .btn-confirm,
+            .checkout-actions .btn-back { width: 100%; }
+            #use-location, #snap-street { width: 100%; }
+        }
     </style>
 
     <div class="checkout-grid">
@@ -36,23 +41,23 @@
         @csrf
         <div style="margin-bottom:12px">
             <label for="telefono">Teléfono</label><br>
-            <input type="text" id="telefono" name="telefono" required style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px" value="{{ old('telefono', auth()->check() ? auth()->user()->telefono : '') }}">
+            <input type="text" id="telefono" name="telefono" required inputmode="numeric" pattern="[0-9]{9}" placeholder="9 dígitos" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px" value="{{ old('telefono', auth()->check() ? auth()->user()->telefono : '') }}">
         </div>
         <div style="margin-bottom:12px">
             <label for="direccion">Dirección de entrega</label><br>
-            <textarea id="direccion" name="direccion" required style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px" rows="4"></textarea>
+            <textarea id="direccion" name="direccion" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px" rows="4" placeholder="Calle, número, referencia..."></textarea>
             <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-                <button type="button" id="use-location" style="background:#0b5ed7;color:#fff;padding:6px 10px;border-radius:6px;border:none;">Usar mi ubicación</button>
-                <button type="button" id="snap-street" style="background:#6c757d;color:#fff;padding:6px 10px;border-radius:6px;border:none">Snap a la calle</button>
+                <button type="button" id="use-location" style="background:#0b5ed7;color:#fff;padding:10px 12px;border-radius:8px;border:none;">Usar mi ubicación</button>
+                <button type="button" id="snap-street" style="background:#6c757d;color:#fff;padding:10px 12px;border-radius:8px;border:none">Ajustar a la calle</button>
                 <span id="loc-status" style="font-size:90%;color:#666"></span>
             </div>
             <input type="hidden" id="lat" name="lat">
             <input type="hidden" id="lng" name="lng">
         </div>
 
-        <div style="margin-top:16px">
-            <button type="submit" style="background:#1ca69a;color:#fff;padding:10px 16px;border-radius:6px;border:none">Confirmar compra</button>
-            <a href="{{ route('cart.index') }}" style="margin-left:8px">Volver al carrito</a>
+        <div class="checkout-actions" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+            <button type="submit" class="btn-confirm" style="background:#1ca69a;color:#fff;padding:12px 16px;border-radius:8px;border:none;flex:1 1 280px">Confirmar compra</button>
+            <a href="{{ route('cart.index') }}" class="btn-back" style="display:inline-block;background:#f3f4f6;color:#374151;padding:12px 16px;border-radius:8px;border:1px solid #e5e7eb;flex:1 1 280px;text-align:center;text-decoration:none">Volver al carrito</a>
         </div>
     </form>
 

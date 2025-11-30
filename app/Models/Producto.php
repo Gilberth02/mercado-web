@@ -40,6 +40,18 @@ class Producto extends Model
         // Un Producto pertenece a un Vendedor
         return $this->belongsTo(Vendedor::class, 'vendedor_id', 'user_id');
     }
+
+    // Relación: Un producto tiene muchas reseñas
+public function resenas() {
+    return $this->hasMany(Resena::class);
+}
+
+// Función auxiliar para obtener el promedio de estrellas
+public function promedioCalificacion() {
+    // Retorna el promedio o 0 si no hay calificaciones
+    return round($this->resenas->avg('puntuacion'), 1) ?? 0;
+}
+
 }
 
 

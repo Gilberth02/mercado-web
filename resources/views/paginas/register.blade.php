@@ -29,7 +29,7 @@
               <label class="campo">
                 <span class="etiqueta">Nombre completo</span>
                 
-                <input class="entrada" type="text" name="name" placeholder="tu nombre" value="{{ old('name') }}" required autofocus>
+                <input class="entrada" type="text" name="name" placeholder="tu nombre" value="{{ old('name') }}" required autofocus pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$" title="Solo letras y espacios">
                 {{--  Mostrar errores de validación --}}
                 @error('name')
                   <span class="error-laravel">{{ $message }}</span>
@@ -39,7 +39,7 @@
               <label class="campo">
                 <span class="etiqueta">Correo</span>
                 {{-- name="email", value="{{ old('email') }}" --}}
-                <input class="entrada" type="email" name="email" placeholder="Ingrese su correo a qui @gmail.com" value="{{ old('email') }}" required>
+                <input class="entrada" type="email" name="email" placeholder="tucorreo@gmail.com o hotmail.com" value="{{ old('email') }}" required pattern="^[\w.+-]+@(gmail\.com|hotmail\.com)$" title="Solo se permite @gmail.com o @hotmail.com">
                 @error('email')
                   <span class="error-laravel">{{ $message }}</span>
                 @enderror

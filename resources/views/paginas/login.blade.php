@@ -19,7 +19,7 @@
 
               <label class="campo">
                 <span class="etiqueta">Correo</span>
-                <input class="entrada" type="email" name="email" placeholder="Ingrese su correo a qui @gmail.com" value="{{ old('email') }}" required autofocus>
+                <input class="entrada" type="email" name="email" placeholder="tucorreo@gmail.com o hotmail.com" value="{{ old('email') }}" required autofocus pattern="^[\w.+-]+@(gmail\.com|hotmail\.com)$" title="Solo se permite @gmail.com o @hotmail.com">
                 @error('email')
                   <span class="error-laravel">{{ $message }}</span>
                 @enderror
@@ -27,7 +27,7 @@
 
               <label class="campo">
                 <span class="etiqueta">Contraseña</span>
-                <input class="entrada" type="password" name="password" placeholder="contraseña" required>
+                <input class="entrada" type="password" name="password" placeholder="mínimo 8 caracteres" minlength="8" required>
                 @error('password')
                   <span class="error-laravel">{{ $message }}</span>
                 @enderror

@@ -167,6 +167,14 @@ class CartController extends Controller
         //  Guardamos el carrito actualizado en la sesión
         session()->put('cart', $cart);
 
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => '¡Producto añadido al carrito!',
+                'cart_count' => count($cart)
+            ]);
+        }
+
         //  Redirigimos de vuelta a la tienda con un mensaje
         return redirect()->route('tienda.index')->with('success', '¡Producto añadido al carrito!');
     }
